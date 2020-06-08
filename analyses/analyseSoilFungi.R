@@ -1,5 +1,5 @@
-setwd("/home/duong/Data/Metagenomics/soil_samplesUNITE/sciencepaper_otus/itsx2")
-#setwd("C:/Users/Duong Vu/Documents/CBSPapers/SoilSamples-2020/data/itsx2/metadata")
+#setwd("/home/duong/Data/Metagenomics/soil_samplesUNITE/sciencepaper_otus/itsx2")
+setwd("C:/Users/Duong Vu/Documents/CBSPapers/SoilSamples-2020/data/itsx2/metadata")
 #vegan
 #install.packages("vegan")
 library("vegan")
@@ -10,8 +10,8 @@ library(grid)
 #load otu table
 otu_table <-read.delim("soil_ITS2.table",row.names=1,check.names=FALSE)
 guild_table <-read.delim("soil_ITS2.guild",row.names=1,check.names=FALSE)
-meta_table <-read.delim("/home/duong/Data/Metagenomics/soil_samplesUNITE/sciencepaper_otus/soil_ITS2.metadata",row.names=1,check.names=FALSE)
-#meta_table <-read.delim("C:/Users/Duong Vu/Documents/CBSPapers/SoilSamples-2020/data/itsx2/metadata/soil_ITS2.metadata",row.names=1,check.names=FALSE)
+#meta_table <-read.delim("/home/duong/Data/Metagenomics/soil_samplesUNITE/sciencepaper_otus/soil_ITS2.metadata",row.names=1,check.names=FALSE)
+meta_table <-read.delim("C:/Users/Duong Vu/Documents/CBSPapers/SoilSamples-2020/data/itsx2/metadata/soil_ITS2.metadata",row.names=1,check.names=FALSE)
 
 otu_number <-dim(otu_table)[1]
 sample_number <-dim(otu_table)[2]
@@ -382,50 +382,1066 @@ print(p)
 dev.off()
 ############################
 #Correlation----
+abund <-colSums(otu_table[1:otu_number,])
+rich <-colSums(otu_table >0)
 metadata=data.frame(sample_id=rownames(meta_table),
                     biome=biomes,
                     pH=meta_table$pH,
+                    n=meta_table$N,
+                    c=meta_table$C,
                     C_N_ratio=meta_table$C/meta_table$N,
                     Elevation=meta_table$Elevation,
-                    Latitude=meta_table$Latitude,
+                    Latitude=abs(meta_table$Latitude),
                     richness=rich,
                     abundance=abund,
                     row.names = 1, 
                     check.names=FALSE,
                     stringsAsFactors = FALSE)
-biomes[biomes=="Arctic tundra"] <- "AT"
-biomes[biomes=="Boreal forests"] <- "BF"
-biomes[biomes=="Grassland and shrubland"] <- "GS"
-biomes[biomes=="Mediterranean"] <- "MED"
-biomes[biomes=="Moist tropical forests"] <- "MTF"
-biomes[biomes=="Savannas"] <- "SAV"
-biomes[biomes=="Dry tropical forests"] <- "DTF"
-biomes[biomes=="Southern temperate forests"] <- "STF"
-biomes[biomes=="Tropical montane forests"] <- "TMF"
-biomes[biomes=="Temperate deciduous forests"] <- "TDF"
-biomes[biomes=="Temperate coniferous forests"] <- "TCF"
+cor(metadata$abundance,abs(metadata$Latitude))
+cor(metadata$abundance,metadata$pH)
+cor(metadata$abundance,metadata$C_N_ratio)
+cor(metadata$abundance,metadata$Elevation)
+cor(metadata$richness,abs(metadata$Latitude))
+cor(metadata$richness,metadata$pH)
+cor(metadata$richness,metadata$C_N_ratio)
+cor(metadata$richness,metadata$Elevation)
+cor(metadata$abundance,metadata$richness)
+
+cor(metadata$pH,metadata$C_N_ratio)
+cor(metadata$pH,abs(metadata$Latitude))
+cor(metadata$pH,metadata$Elevation)
+#guild table
+table <-data.frame(OTU_ID = row.names(guild_table), 
+                   guild = as.character(guild_table$Guild),
+                   otu_table,
+                   row.names = 1, 
+                   check.names=FALSE,
+                   stringsAsFactors = FALSE)
+
+
+table <-table[order(table$guild),]
+uniqueguilds <-unique(table$guild)
+unknown <- table[table$guild=="",]
+dim(unknown)
+#plant pathogen  and sap
+plantpathsaprotroph <- table[grepl("plant pathogen",tolower(table$guild)) & grepl("saprotroph",tolower(table$guild)),]
+dim(plantpathsaprotroph)
+table$guild[grepl("plant pathogen",tolower(table$guild))] <- "Plant pathogens"
+table$guild[grepl("fungal parasite",tolower(table$guild))] <- "Animal- and mycoparasites"
+table$guild[grepl("lichen parasite",tolower(table$guild))] <- "Animal- and mycoparasites"
+table$guild[grepl("animal parasite",tolower(table$guild))] <- "Animal- and mycoparasites"
+table$guild[grepl("arbuscular mycorrhizal",tolower(table$guild))] <- "AM fungi"
+#table$guild[grepl("plant pathogen",tolower(table$guild)) & grepl("saprotroph",tolower(table$guild))] <- "Ecto-Saprotrophs"
+ectosaprotroph <- table[grepl("ectomycorrhiza",tolower(table$guild)) & grepl("saprotroph",tolower(table$guild)),]
+dim(ectosaprotroph)
+table$guild[grepl("ectomycorrhizal",tolower(table$guild))] <- "Ectomycorrhizal fungi"
+table$guild[grepl("saprotroph",tolower(table$guild))] <- "Saprotrophs"
+table$guild[table$guild==""] <- "unknown"
+table$guild[!(table$guild=="Plant pathogens" 
+              | table$guild== "AM fungi" 
+              | table$guild=="Ectomycorrhizal fungi"
+              | table$guild=="Animal- and mycoparasites"
+              | table$guild=="unknown"
+              | table$guild=="Saprotrophs"
+)] <- "others"
+
+ecm <- subset(table,table$guild=="Ectomycorrhizal fungi")
+ecm <-ecm[2:ncol(ecm)]
+sap  <- subset(table,table$guild=="Saprotrophs")
+sap<-sap[2:ncol(sap)]
+pp <- subset(table,table$guild=="Plant pathogens")
+pp<-pp[2:ncol(pp)]
+am <- subset(table,table$guild=="AM fungi")
+am<-am[2:ncol(am)]
+pa <- subset(table,table$guild=="Animal- and mycoparasites")
+pa<-pa[2:ncol(pa)]
+
+#AT
 m<-subset(metadata,metadata$biome=="AT")
+samples <- rownames(m)
+subotus <- table[,samples]
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
 cor(m$pH,m$C_N_ratio)
+cor(rich,m$n)
+cor(rich,m$c)
+cor(abund,m$n)
+cor(abund,m$c)
+
+#richness and abundance of Ecm in AT
+subotus <- ecm[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,m$n)
+cor(rich,m$c)
+cor(abund,m$n)
+cor(abund,m$c)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of am in AT
+subotus <- am[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,m$n)
+cor(rich,m$c)
+cor(abund,m$n)
+cor(abund,m$c)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pp in AT
+subotus <- pp[,AT_samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of sap in AT
+subotus <- sap[,AT_samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pa in AT
+subotus <- pa[,AT_samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+
+#BF
 m<-subset(metadata,metadata$biome=="BF")
+samples <- rownames(m)
 cor(m$pH,m$C_N_ratio)
+subotus <- table[,samples]
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(m$pH,m$C_N_ratio)
+cor(rich,m$n)
+cor(rich,m$c)
+cor(abund,m$n)
+cor(abund,m$c)
+
+#richness and abundance of Ecm in BF
+subotus <- ecm[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of am in BF
+subotus <- am[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pp in BF
+subotus <- pp[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of sap in BF
+subotus <- sap[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pa in BF
+subotus <- pa[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+
+#GS
 m<-subset(metadata,metadata$biome=="GS")
+samples <- rownames(m)
+subotus <- table[,samples]
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
 cor(m$pH,m$C_N_ratio)
+cor(rich,m$n)
+cor(rich,m$c)
+cor(abund,m$n)
+cor(abund,m$c)
+
+#richness and abundance of Ecm in gs
+subotus <- ecm[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of am in GS
+subotus <- am[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pp in GS
+subotus <- pp[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of sap in GS
+subotus <- sap[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pa in GS
+subotus <- pa[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+
+#MED
 m<-subset(metadata,metadata$biome=="MED")
+samples <- rownames(m)
+subotus <- table[,samples]
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
 cor(m$pH,m$C_N_ratio)
+cor(rich,m$n)
+cor(rich,m$c)
+cor(abund,m$n)
+cor(abund,m$c)
+
+#richness and abundance of Ecm in MED
+subotus <- ecm[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of am in MED
+subotus <- am[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pp in MED
+subotus <- pp[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of sap in MED
+subotus <- sap[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pa in MED
+subotus <- pa[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+
+#MTF
 m<-subset(metadata,metadata$biome=="MTF")
+samples <- rownames(m)
+subotus <- table[,samples]
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
 cor(m$pH,m$C_N_ratio)
+cor(rich,m$n)
+cor(rich,m$c)
+cor(abund,m$n)
+cor(abund,m$c)
+
+#richness and abundance of Ecm in MTF
+subotus <- ecm[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of am in MTF
+subotus <- am[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pp in MTF
+subotus <- pp[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of sap in MTF
+subotus <- sap[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pa in MTF
+subotus <- pa[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+
+#SAV
 m<-subset(metadata,metadata$biome=="SAV")
+samples <- rownames(m)
+subotus <- table[,samples]
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
 cor(m$pH,m$C_N_ratio)
+cor(rich,m$n)
+cor(rich,m$c)
+cor(abund,m$n)
+cor(abund,m$c)
+
+#richness and abundance of Ecm in SAV
+subotus <- ecm[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of am in SAV
+subotus <- am[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pp in SAV
+subotus <- pp[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of sap in SAV
+subotus <- sap[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pa in SAV
+subotus <- pa[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+
+
+#DTF
 m<-subset(metadata,metadata$biome=="DTF")
+samples <- rownames(m)
+subotus <- table[,samples]
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
 cor(m$pH,m$C_N_ratio)
+cor(rich,m$n)
+cor(rich,m$c)
+cor(abund,m$n)
+cor(abund,m$c)
+
+#richness and abundance of Ecm in DTF
+subotus <- ecm[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of am in DTF
+subotus <- am[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pp in DTF
+subotus <- pp[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of sap in DTF
+subotus <- sap[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pa in DTF
+subotus <- pa[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+
+#STF
 m<-subset(metadata,metadata$biome=="STF")
+samples <- rownames(m)
+subotus <- table[,samples]
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
 cor(m$pH,m$C_N_ratio)
+cor(rich,m$n)
+cor(rich,m$c)
+cor(abund,m$n)
+cor(abund,m$c)
+
+#richness and abundance of Ecm in STF
+subotus <- ecm[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of am in STF
+subotus <- am[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pp in STF
+subotus <- pp[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of sap in STF
+subotus <- sap[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pa in STF
+subotus <- pa[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+
+
+#TMF
 m<-subset(metadata,metadata$biome=="TMF")
 cor(m$pH,m$C_N_ratio)
+samples <- rownames(m)
+#richness and abundance of Ecm in TMF
+subotus <- ecm[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of am in TMF
+subotus <- am[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pp in TMF
+subotus <- pp[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of sap in TMF
+subotus <- sap[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pa in TMF
+subotus <- pa[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+
+
+
+#TDF
 m<-subset(metadata,metadata$biome=="TDF")
+samples <- rownames(m)
+subotus <- table[,samples]
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
 cor(m$pH,m$C_N_ratio)
+cor(rich,m$n)
+cor(rich,m$c)
+cor(abund,m$n)
+cor(abund,m$c)
+
+#richness and abundance of Ecm in TDF
+subotus <- ecm[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of am in TDF
+subotus <- am[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pp in TDF
+subotus <- pp[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of sap in TDF
+subotus <- sap[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pa in TDF
+subotus <- pa[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+
+
+#TCF
 m<-subset(metadata,metadata$biome=="TCF")
+samples <- rownames(m)
+subotus <- table[,samples]
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
 cor(m$pH,m$C_N_ratio)
+cor(rich,m$n)
+cor(rich,m$c)
+cor(abund,m$n)
+cor(abund,m$c)
+
+#richness and abundance of Ecm in TCF
+subotus <- ecm[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of am in TCF
+subotus <- am[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pp in TCF
+subotus <- pp[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of sap in TCF
+subotus <- sap[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+#richness and abundance of pa in TCF
+subotus <- pa[,samples]
+dim(subotus)
+subotus <-t(subotus)
+abund <-rowSums(subotus)
+rich <-rowSums(subotus >0)
+cor(rich,abs(m$Latitude))
+cor(rich,m$pH)
+cor(rich,m$C_N_ratio)
+cor(rich,m$Elevation)
+cor(abund,abs(m$Latitude))
+cor(abund,m$pH)
+cor(abund,m$C_N_ratio)
+cor(abund,m$Elevation)
+cor(abund,rich)
+
+
+
 #########################################
 #Species indicator----
 #install.packages("indicspecies")
@@ -467,69 +1483,21 @@ inv = multipatt(df, biomes, func = "r.g", control = how(nperm=9999))
 summary(inv)
 
 
-bestEnvVariables<-rownames(abund_table.adonis$aov.tab)[abund_table.adonis$aov.tab$"Pr(>F)"<0.05]
-#remove NA entries
-bestEnvVariables<-bestEnvVariables[!is.na(bestEnvVariables)]
-bestEnvVariables
-#do all
-#sol<-cca(abund_table ~ ., data)
-
-#We are now going to use only those environmental variables in cca that were found significant
-eval(parse(text=paste("sol <- cca(abund_table ~ ",do.call(paste,c(as.list(bestEnvVariables),sep=" + ")),",data=as.data.frame(metadata))",sep="")))
-
-scrs<-scores(sol,display=c("sp","wa","lc","bp","cn"))
-#Check the attributes
-# > attributes(scrs)
-# $names
-# [1] "species"     "sites"       "constraints" "biplot"     
-# [5] "centroids"  
-
-#Extract site data first
-df_sites<-data.frame(scrs$sites,biomes,countries)
-colnames(df_sites)<-c("x","y","Biome","Country")
-
-#Draw sites
-locationnumber <- length(unique(countries))
-shape_values<-seq(1,locationnumber)
-library(ggplot2)
-p<-ggplot()
-p<-p+geom_point(data=df_sites,aes(x,y,colour=Biome,shape=Country)) + 
-  scale_shape_manual(values=shape_values)
-
-#Draw biplots
-multiplier <- vegan:::ordiArrowMul(scrs$biplot)
-df_arrows<- scrs$biplot*multiplier
-colnames(df_arrows)<-c("x","y")
-df_arrows=as.data.frame(df_arrows)
-
-p<-p+geom_segment(data=df_arrows, aes(x = 0, y = 0, xend = x, yend = y),
-                  arrow = arrow(length = unit(0.2, "cm")),color="#808080",alpha=0.5)
-
-p<-p+geom_text(data=as.data.frame(df_arrows*1.1),aes(x, y, label = rownames(df_arrows)),color="#808080",alpha=0.5)
-
-# Draw species
-df_species<- as.data.frame(scrs$species)
-colnames(df_species)<-c("x","y")
-
-p<-p+theme_bw()
-pdf("results/CCA_env_otus_biome.pdf",width = 12, height = 9)
-print(p)
-dev.off()
-write.table(df,file = "results/otus_cordinates.txt", sep = "\t", quote = FALSE, row.names = T)
 
 #########################################
-#Species indicator plant path----
+#Species indicator plant pathogen ----
 #install.packages("indicspecies")
 library(indicspecies)
+
 df <-data.frame(OTU_ID = row.names(guild_table), 
+                Guild=guild_table$Guild,
                 taxa = as.character(guild_table$genus),
                 otu_table,
-                Guild=guild_table$Guild,
                 row.names = 1, 
                 check.names=FALSE,
                 stringsAsFactors = FALSE)
 df <- subset(df, grepl("plant pathogen",tolower(df$Guild)))
-df <-df[1:(ncol(df)-1)]
+df <-df[2:ncol(df)]
 df <-df[order(df$taxa),]
 #replace empty class with "unidentified"
 df$taxa[df$taxa==""] <- "unidentified"
@@ -561,153 +1529,6 @@ inv = multipatt(df, biomes, func = "r.g", control = how(nperm=9999))
 summary(inv)
 
 
-bestEnvVariables<-rownames(abund_table.adonis$aov.tab)[abund_table.adonis$aov.tab$"Pr(>F)"<0.05]
-#remove NA entries
-bestEnvVariables<-bestEnvVariables[!is.na(bestEnvVariables)]
-bestEnvVariables
-#do all
-#sol<-cca(abund_table ~ ., data)
-
-#We are now going to use only those environmental variables in cca that were found significant
-eval(parse(text=paste("sol <- cca(abund_table ~ ",do.call(paste,c(as.list(bestEnvVariables),sep=" + ")),",data=as.data.frame(metadata))",sep="")))
-
-scrs<-scores(sol,display=c("sp","wa","lc","bp","cn"))
-#Check the attributes
-# > attributes(scrs)
-# $names
-# [1] "species"     "sites"       "constraints" "biplot"     
-# [5] "centroids"  
-
-#Extract site data first
-df_sites<-data.frame(scrs$sites,biomes,countries)
-colnames(df_sites)<-c("x","y","Biome","Country")
-
-#Draw sites
-locationnumber <- length(unique(countries))
-shape_values<-seq(1,locationnumber)
-library(ggplot2)
-p<-ggplot()
-p<-p+geom_point(data=df_sites,aes(x,y,colour=Biome,shape=Country)) + 
-  scale_shape_manual(values=shape_values)
-
-#Draw biplots
-multiplier <- vegan:::ordiArrowMul(scrs$biplot)
-df_arrows<- scrs$biplot*multiplier
-colnames(df_arrows)<-c("x","y")
-df_arrows=as.data.frame(df_arrows)
-
-p<-p+geom_segment(data=df_arrows, aes(x = 0, y = 0, xend = x, yend = y),
-                  arrow = arrow(length = unit(0.2, "cm")),color="#808080",alpha=0.5)
-
-p<-p+geom_text(data=as.data.frame(df_arrows*1.1),aes(x, y, label = rownames(df_arrows)),color="#808080",alpha=0.5)
-
-# Draw species
-df_species<- as.data.frame(scrs$species)
-colnames(df_species)<-c("x","y")
-
-p<-p+theme_bw()
-pdf("results/CCA_env_otus_biome_plantpath.pdf",width = 12, height = 9)
-print(p)
-dev.off()
-write.table(df,file = "results/otus_cordinates_plantpath.txt", sep = "\t", quote = FALSE, row.names = T)
-
-
-#########################################
-#CCA environmental information + biomes----
-#CCA
-abund <-colSums(otu_table[1:otu_number,])
-rich <-colSums(otu_table >0)
-metadata=data.frame(sample_id=rownames(meta_table),
-                    pH=meta_table$pH,
-                    C_N_ratio=meta_table$C/meta_table$N,
-                    Elevation=meta_table$Elevation,
-                    Latitude=meta_table$Latitude,
-                    Type=biomes,
-                    richness=rich,
-                    abundance=abund,
-                    row.names = 1, 
-                    check.names=FALSE,
-                    stringsAsFactors = FALSE)
-data=as.data.frame(metadata)
-
-abund_table <- t(otu_table)
-abund_table<-subset(abund_table,rowSums(abund_table)!=0)
-#Convert to relative frequencies
-abund_table<-abund_table/rowSums(abund_table)
-#Use adonis to find significant environmental variables
-abund_table.adonis <- adonis(abund_table ~ ., data)
-abund_table.adonis 
-
-#abund_table.mrpp <-with(data, mrpp(abund_table,data$pH))
-#abund_table.mrpp
-#write.table(abund_table.adonis,file = "results/adonis_env_biome.txt")
-
-cor(data$abundance,abs(data$Latitude))
-cor(data$abundance,data$pH)
-cor(data$abundance,data$C_N_ratio)
-cor(data$abundance,data$Elevation)
-cor(data$richness,abs(data$Latitude))
-cor(data$richness,data$pH)
-cor(data$richness,data$C_N_ratio)
-cor(data$richness,data$Elevation)
-cor(data$abundance,data$richness)
-
-
-bestEnvVariables<-rownames(abund_table.adonis$aov.tab)[abund_table.adonis$aov.tab$"Pr(>F)"<0.05]
-#remove NA entries
-bestEnvVariables<-bestEnvVariables[!is.na(bestEnvVariables)]
-bestEnvVariables
-#do all
-#sol<-cca(abund_table ~ ., data)
-
-#We are now going to use only those environmental variables in cca that were found significant
-eval(parse(text=paste("sol <- cca(abund_table ~ ",do.call(paste,c(as.list(bestEnvVariables),sep=" + ")),",data=as.data.frame(metadata))",sep="")))
-
-scrs<-scores(sol,display=c("sp","wa","lc","bp","cn"))
-#Check the attributes
-# > attributes(scrs)
-# $names
-# [1] "species"     "sites"       "constraints" "biplot"     
-# [5] "centroids"  
-
-#Extract site data first
-#df_sites<-data.frame(scrs$sites,biomes,countries)
-#colnames(df_sites)<-c("x","y","Biome","Country")
-df_sites<-data.frame(scrs$sites,biomes)
-colnames(df_sites)<-c("x","y","Biome")
-
-#Draw sites
-#locationnumber <- length(unique(countries))
-#shape_values<-seq(1,locationnumber)
-library(ggplot2)
-p<-ggplot()
-#p<-p+geom_point(data=df_sites,aes(x,y,colour=Biome,shape=Country)) + 
-#  scale_shape_manual(values=shape_values)
-p<-p+geom_point(data=df_sites,aes(x,y,colour=Biome))
-#Draw biplots
-multiplier <- vegan:::ordiArrowMul(scrs$biplot)
-df_arrows<- scrs$biplot*multiplier
-colnames(df_arrows)<-c("x","y")
-df_arrows=as.data.frame(df_arrows)
-
-p<-p+geom_segment(data=df_arrows, aes(x = 0, y = 0, xend = x, yend = y),
-                  arrow = arrow(length = unit(0.2, "cm")),color="#808080",alpha=0.5)
-
-p<-p+geom_text(data=as.data.frame(df_arrows*1.1),
-               aes(x, y, label = rownames(df_arrows)),
-               color="#808080",alpha=0.5)
-
-# Draw species
-df_species<- as.data.frame(scrs$species)
-colnames(df_species)<-c("x","y")
-
-p<-p+theme_bw()
-pdf("results/CCA_env_otus_biome_all.pdf",width = 12, height = 9)
-print(p)
-dev.off()
-write.table(df,file = "results/otus_cordinates_biomes.txt", sep = "\t", quote = FALSE, row.names = T)
-
-
 #########################################
 #CCA environmental information----
 #CCA
@@ -715,11 +1536,12 @@ abund <-colSums(otu_table[1:otu_number,])
 rich <-colSums(otu_table >0)
 metadata=data.frame(sample_id=rownames(meta_table),
                    pH=meta_table$pH,
+                  
                    C_N_ratio=meta_table$C/meta_table$N,
                    Elevation=meta_table$Elevation,
                    Latitude=meta_table$Latitude,
-                   #richness=rich,
-                   #abundance=abund,
+                   richness=rich,
+                   abundance=abund,
                    row.names = 1, 
                    check.names=FALSE,
                    stringsAsFactors = FALSE)
@@ -737,15 +1559,6 @@ abund_table.adonis
 #abund_table.mrpp
 #write.table(abund_table.adonis,file = "results/adonis_env_biome.txt")
 
-cor(data$abundance,abs(data$Latitude))
-cor(data$abundance,data$pH)
-cor(data$abundance,data$C_N_ratio)
-cor(data$abundance,data$Elevation)
-cor(data$richness,abs(data$Latitude))
-cor(data$richness,data$pH)
-cor(data$richness,data$C_N_ratio)
-cor(data$richness,data$Elevation)
-cor(data$abundance,data$richness)
 
 
 bestEnvVariables<-rownames(abund_table.adonis$aov.tab)[abund_table.adonis$aov.tab$"Pr(>F)"<0.05]
@@ -1299,14 +2112,6 @@ metadata=data.frame(sample_id=rownames(meta_table),
                     check.names=FALSE,
                     stringsAsFactors = FALSE)
 data=as.data.frame(metadata)
-
-abund_table <- t(table)
-abund_table<-subset(abund_table,rowSums(abund_table)!=0)
-#Convert to relative frequencies
-abund_table<-abund_table/rowSums(abund_table)
-#Use adonis to find significant environmental variables
-abund_table.adonis <- adonis(abund_table ~ ., data)
-abund_table.adonis 
 #correlation
 cor(data$abundance,abs(data$Latitude))
 cor(data$abundance,data$pH)
@@ -1318,7 +2123,13 @@ cor(data$richness,data$C_N_ratio)
 cor(data$richness,data$Elevation)
 cor(data$abundance,data$richness)
 
-
+abund_table <- t(table)
+abund_table<-subset(abund_table,rowSums(abund_table)!=0)
+#Convert to relative frequencies
+abund_table<-abund_table/rowSums(abund_table)
+#Use adonis to find significant environmental variables
+abund_table.adonis <- adonis(abund_table ~ ., data)
+abund_table.adonis 
 bestEnvVariables<-rownames(abund_table.adonis$aov.tab)[abund_table.adonis$aov.tab$"Pr(>F)"<0.05]
 #remove NA entries
 bestEnvVariables<-bestEnvVariables[!is.na(bestEnvVariables)]
@@ -1615,56 +2426,6 @@ cor(data$richness,data$C_N_ratio)
 cor(data$richness,data$Elevation)
 cor(data$abundance,data$richness)
 
-
-bestEnvVariables<-rownames(abund_table.adonis$aov.tab)[abund_table.adonis$aov.tab$"Pr(>F)"<0.05]
-#remove NA entries
-bestEnvVariables<-bestEnvVariables[!is.na(bestEnvVariables)]
-bestEnvVariables
-#do all
-#sol<-cca(abund_table ~ ., data)
-
-#We are now going to use only those environmental variables in cca that were found significant
-eval(parse(text=paste("sol <- cca(abund_table ~ ",do.call(paste,c(as.list(bestEnvVariables),sep=" + ")),",data=as.data.frame(metadata))",sep="")))
-
-scrs<-scores(sol,display=c("sp","wa","lc","bp","cn"))
-#Check the attributes
-# > attributes(scrs)
-# $names
-# [1] "species"     "sites"       "constraints" "biplot"     
-# [5] "centroids"  
-
-#Extract site data first
-df_sites<-data.frame(scrs$sites,biomes,countries)
-colnames(df_sites)<-c("x","y","Biome","Country")
-
-#Draw sites
-locationnumber <- length(unique(countries))
-shape_values<-seq(1,locationnumber)
-library(ggplot2)
-p<-ggplot()
-p<-p+geom_point(data=df_sites,aes(x,y,colour=Biome,shape=Country)) + 
-  scale_shape_manual(values=shape_values)
-
-#Draw biplots
-multiplier <- vegan:::ordiArrowMul(scrs$biplot)
-df_arrows<- scrs$biplot*multiplier
-colnames(df_arrows)<-c("x","y")
-df_arrows=as.data.frame(df_arrows)
-
-p<-p+geom_segment(data=df_arrows, aes(x = 0, y = 0, xend = x, yend = y),
-                  arrow = arrow(length = unit(0.2, "cm")),color="#808080",alpha=0.5)
-
-p<-p+geom_text(data=as.data.frame(df_arrows*1.1),aes(x, y, label = rownames(df_arrows)),color="#808080",alpha=0.5)
-
-# Draw species
-df_species<- as.data.frame(scrs$species)
-colnames(df_species)<-c("x","y")
-
-p<-p+theme_bw()
-pdf("results/CCA_env_otus_AT.pdf",width = 12, height = 9)
-print(p)
-dev.off()
-write.table(df,file = "results/otus_AT.txt", sep = "\t", quote = FALSE, row.names = T)
 
 ########################################
 #CCA BF ----
