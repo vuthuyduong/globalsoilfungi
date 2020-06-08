@@ -1,0 +1,263 @@
+1, preprocessing
+1a, Download data
+ ~/Data/Metagenomics/soil_samplesUNITE/scripts/downloadsamples.py
+ ~/Data/Metagenomics/soil_samplesUNITE/biosample_fullresult.txt 
+
+1b, Get metadata 
+
+/home/duong/Data/Metagenomics/soil_samplesUNITE/scripts/getmetadata.py /home/duong/Data/Metagenomics/soil_samplesUNITE/biosample_fullresult.txt metadata.txt
+
+1c, Get OTUs of the Science paper
+/home/duong/Data/Metagenomics/soil_samplesUNITE/sciencepaper_otus/scripts/sciencedata2fasta.py Tedersoo-DataFileS1_OTUdist_ID_ecology_seqs.txt
+
+The results are saved in soil.fasta, soil.classification, soil.table, soil.metadata
+
+The number of the sequences in soil.fasta is 50589
+
+1d, Combine soil.metadata with metadata.txt 
+
+/home/duong/Data/Metagenomics/soil_samplesUNITE/sciencepaper_otus/scripts/combineMetadata.py /home/duong/Data/Metagenomics/soil_samplesUNITE/metadata.txt soil.metadata soil_ITS2.metadata
+
+
+1e, Get the sequences of ITS2 region only
+
+/home/duong/tools/ITSx_1.1.1/ITSx /home/duong/data/Metagenomics/soil_samplesUNITE/sciencepaper_otus/itsx2/soil.fasta
+
+cp ITSx_out.ITS2.fasta soil_ITS2.fasta
+
+The number of the sequences in soil_ITS2.fasta is The number 42626. Number of not ITS2 sequences: 7963.
+
+The number of the instances of the OTUs is 932868
+
+########################################
+2,Get sequence lengths (optional) 
+/home/duong/Data/Metagenomics/soil_samplesUNITE/scripts/getsequencelenth.py soil_ITS2.fasta soilITS2_sequencelengths.txt
+
+/home/duong/Data/Metagenomics/soil_samplesUNITE/scripts/getsequenc
+elenth.py soil_ITS2.fasta soilITS2_sequencelengths.txt
+188.0878806362314
+number of lengths 0-50: 0
+number of lengths 50-100: 2
+number of lengths 100-150: 7731
+number of lengths 150-200: 18834
+number of lengths 200-250: 13803
+number of lengths 250-300: 1957
+number of lengths 300-350: 289
+number of lengths 350-400: 10
+number of lengths 400-450: 0
+number of lengths 450-500: 0
+number of lengths 500-550: 0
+number of lengths 550-600: 0
+number of lengths 600-650: 0
+number of lengths 650-700: 0
+number of lengths 700-750: 0
+number of lengths 750-800: 0
+number of lengths 800-850: 0
+number of lengths 850-900: 0
+number of lengths 900-950: 0
+number of lengths 950-1000: 0
+number of lengths 1000-1050: 0
+
+
+3, Check the thresholds predicted for ITS2
+
+#species level
+grep position CBSITS2_classified.locally.predicted.100.notspecies 
+
+Threshold	Fmeasure at the classification position 2 
+Optimal threshold at the classification position 2: 0.996	Fmeasure: 0.742818207801
+
+#at higher levels
+grep position CBSITS2_classified.locally.predicted.100.notspecies 
+
+#genus level
+Threshold	Fmeasure at the classification position 3 
+Optimal threshold at the classification position 3: 0.949	Fmeasure: 0.653179127186
+
+#family level
+Threshold	Fmeasure at the classification position 4 
+Optimal threshold at the classification position 4: 0.906	Fmeasure: 0.670254896171
+
+
+#order level
+Threshold	Fmeasure at the classification position 5 
+Optimal threshold at the classification position 5: 0.826	Fmeasure: 0.73407210476
+
+#class level
+Threshold	Fmeasure at the classification position 6 
+Optimal threshold at the classification position 6: 0.7	Fmeasure: 0.650230055171
+
+grep position CBSITS2_classified.locally.predicted.6.100.50-70
+Threshold	Fmeasure at the classification position 6 
+Optimal threshold at the classification position 6: 0.535	Fmeasure: 0.761313956167
+
+
+
+4, compare with UNITE using BLAST with the predicted thresholds
+UNITE database UNITE_publuc_02.02.2019.fasta
+THe thresholds that the Science paper used for classification are 0.9 for genera, 0.85 for families, 0.8 for orders, 0.75 for classes.
+
+
+#Genus level
+#compare with UNITE
+
+time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/searchlocally.py soil_ITS2.fasta /home/duong/data/Metagenomics/references/UNITE/2018/UNITE.genus.fasta 100 soil_ITS2.genus.blastresult
+
+time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/classify.py soil_ITS2.genus.blastresult soil_ITS.fasta /home/duong/data/Metagenomics/references/UNITE/2018/UNITE.genus.classification 6 0.949 soil_ITS2.genus.classification soil_ITS2.remainedgenera.fasta
+
+cat soil_ITS2.genus.classification | wc -l
+
+Number of sequences identified at genus level: 18281 (soil_ITS2.genus.classification)
+Number of remaining sequences to be identified: 24345 (soil_ITS2.remainedgenera.fasta) 
+
+#compare with CBS
+
+time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/searchlocally.py soil_ITS2.remainedgenera.fasta /home/duong/data/Metagenomics/references/CBS/classification/CBSITS.genus.fasta 100 soil_ITS2.cbsgenus.blastresult
+
+/time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/classify.py soil_ITS2.cbsgenus.blastresult soil_ITS2.fasta /home/duong/data/Metagenomics/references/CBS/classification/CBSITS.genus.classification 6 0.949 soil_ITS2.cbsgenus.classification soil_ITS2.cbsremainedgenera.fasta
+
+cat soil_ITS2.cbsgenus.classification | wc -l
+Number of sequences identified at genus level: 87 (soil_ITS2.cbsgenus.classification)
+grep ">" soil_ITS2.cbsremainedgenera.fasta  |wc -l
+Number of remaining sequences to be identified: 24258 (soil_ITS2.cbsremainedgenera.fasta)
+
+#Family level
+
+#compare with UNITE
+time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/searchlocally.py soil_ITS2.cbsremainedgenera.fasta /home/duong/data/Metagenomics/references/UNITE/2018/UNITE.family.fasta 100 soil_ITS2.family.blastresult
+
+time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/classify.py soil_ITS2.family.blastresult soil_ITS2.fasta /home/duong/data/Metagenomics/references/UNITE/2018/UNITE.family.classification 5 0.906 soil_ITS2.family.classification soil_ITS2.remainedfamilies.fasta
+
+Number of sequences identified at family level: 8983 (soil_ITS2.family.classification, excluding the sequences that have been identified at genus level)
+Number of remaining sequences to be identified: 15275 (soil_ITS2.remainedfamilies.fasta) 
+
+#compare with CBS
+
+time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/searchlocally.py soil_ITS2.remainedfamilies.fasta /home/duong/data/Metagenomics/references/CBS/classification/CBSITS.family.fasta 100 soil_ITS2.cbsfamilies.blastresult
+
+/time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/classify.py soil_ITS2.cbsfamilies.blastresult soil_ITS2.fasta /home/duong/data/Metagenomics/references/CBS/classification/CBSITS.families.classification 5 0.906 soil_ITS2.cbsfamilies.classification soil_ITS2.cbsremainedfamilies.fasta
+
+
+Number of sequences identified at family level: 36 (soil_ITS2.cbsfamilies.classification, excluding the sequences that have been identified at genus level)
+Number of remaining sequences to be identified: 15239 (soil_ITS2.remainedcbsfamilies.fasta) 
+
+
+
+#order level
+
+#compare with UNITE
+time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/searchlocally.py soil_ITS2.cbsremainedfamilies.fasta /home/duong/data/Metagenomics/references/UNITE/2018/UNITE.order.fasta 100 soil_ITS2.order.blastresult
+
+time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/classify.py soil_ITS2.order.blastresult soil_ITS2.fasta /home/duong/data/Metagenomics/references/UNITE/2018/UNITE.order.classification 4 0.826 soil_ITS2.order.classification soil_ITS2.remainedorders.fasta
+
+
+Number of sequences identified at order level: 8328 (soil_ITS2.order.classification, excluding the sequences that have been identified at genus and family levels)
+Number of remaining sequences to be identified: 6911 (soil_ITS2.remainedorders.fasta) 
+
+#compare with CBS
+
+time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/searchlocally.py soil_ITS2.remainedorders.fasta /home/duong/data/Metagenomics/references/CBS/classification/CBSITS.order.fasta 100 soil_ITS2.cbsorders.blastresult
+
+/time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/classify.py soil_ITS2.cbsorders.blastresult soil_ITS2.fasta /home/duong/data/Metagenomics/references/CBS/classification/CBSITS.order.classification 4 0.826 soil_ITS2.cbsorders.classification soil_ITS2.cbsremainedorders.fasta
+
+Number of sequences identified at order level: 9 (soil_ITS2.cbsorders.classification, excluding the sequences that have been identified at genus and family levels)
+Number of remaining sequences to be identified: 6902 (soil_ITS2.cbsremainedorders.fasta) 
+
+#############################
+#class level
+
+time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/searchlocally.py soil_ITS2.cbsremainedorders.fasta /home/duong/data/Metagenomics/references/UNITE/2018/UNITE.class.fasta 100 soil_ITS2.class.blastresult
+
+time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/classify.py soil_ITS2.class.blastresult soil_ITS2.fasta /home/duong/data/Metagenomics/references/UNITE/2018/UNITE.class.classification 3 0.535 soil_ITS2.class.classification soil_ITS2.remainedclasses.fasta
+
+
+
+Number of sequences identified at class level: 2413 (soil_ITS2.class.classification, excluding the sequences that have been identified at genus, family, order levels)
+Number of remaining sequences to be identified: 4489 (soil_ITS2.remainedclasses.fasta) 
+
+#compare with CBS
+
+time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/searchlocally.py soil_ITS2.remainedclasses.fasta /home/duong/data/Metagenomics/references/CBS/classification/CBSITS.class.fasta 100 soil_ITS2.cbsclasses.blastresult
+
+time /home/duong/ProgLang/Python/BarcodeAnalyzer/scripts/classify.py soil_ITS2.cbsclasses.blastresult soil_ITS2.fasta /home/duong/data/Metagenomics/references/CBS/classification/CBSITS.class.classification 3 0.535 soil_ITS2.cbsclasses.classification soil_ITS2.cbsremainedclasses.fasta
+
+Number of sequences identified at class level: 9 (soil_ITS2.cbsclass.classification, excluding the sequences that have been identified at genus, family, order levels)
+Number of remaining sequences to be identified: 4480 (soil_ITS2.cbsremainedclasses.fasta) 
+
+
+
+4, Merge all the classification files
+tail -87 soil_ITS2.cbsgenus.classification > soil_ITS2.cbsgenus.withouheaders.classification
+tail -8983 soil_ITS2.family.classification > soil_ITS2.family.withouheaders.classification
+tail -36 soil_ITS2.cbsfamilies.classification > soil_ITS2.cbsfamily.withouheaders.classification
+tail -8328 soil_ITS2.order.classification > soil_ITS2.order.withouheaders.classification
+tail -9 soil_ITS2.cbsorders.classification > soil_ITS2.cbsorder.withouheaders.classification
+tail -2413 soil_ITS2.class.classification > soil_ITS2.class.withouheaders.classification
+tail -9 soil_ITS2.cbsclasses.classification > soil_ITS2.cbsclass.withouheaders.classification
+
+cat soil_ITS2.genus.classification soil_ITS2.cbsgenus.withouheaders.classification soil_ITS2.family.withouheaders.classification soil_ITS2.cbsfamily.withouheaders.classification soil_ITS2.order.withouheaders.classification soil_ITS2.cbsorder.withouheaders.classification soil_ITS2.class.withouheaders.classification soil_ITS2.cbsclass.withouheaders.classification > soil_ITS2.classification
+
+#############################
+
+
+4, compare the classification provided by the science paper with the new classification
+/home/duong/data/Metagenomics/soil_samplesUNITE/sciencepaper_otus/scripts/compareClassifications.py /home/duong/data/Metagenomics/soil_samplesUNITE/sciencepaper_otus/UNITE_classification.txt soil_ITS2.classification /home/duong/data/Metagenomics/references/CBS/ITSacc.txt soil_ITS2.cbsremainedclasses.fasta soil_ITS2.classification.compared newbycbs.txt
+
+
+Number of sequences identified by UNITE but are not ITS2 sequences: 7963
+Number of genera UNITE vs. UNITEbutNotCBS vs. CBS+UNITE:        15533   1275    18368
+Number of families UNITE vs. UNITEbutNotCBS vs. CBS+UNITE:      23796   2109    27350
+Number of orders UNITE vs. UNITEbutNotCBS vs. CBS+UNITE:        35895   2889    35706
+Number of classes UNITE vs. UNITEbutNotCBS vs. CBS+UNITE:       43289   3914    38130
+Number of the same genera:      9474
+Number of different genera:     4670
+Number of the CBS genera:       149
+Number of the UNITE_ITS2 genera:        114
+Number of the new UNITE_ITS2 genera:    4075
+Number of the same families:    16492
+Number of different families:   4808
+Number of the CBS families:     165
+Number of the UNITE_ITS2 families:      387
+Number of the new UNITE_ITS2 families:  5885
+Number of the same orders:      28029
+Number of different orders:     3732
+Number of the CBS orders:       207
+Number of the UNITE_ITS2 genera:        1245
+Number of the new UNITE_ITS2 genera:    3738
+Number of the same classes:     33289
+Number of different classes:    2938
+Number of the CBS classes:      223
+Number of the UNITE_ITS2 classes:       3148
+Number of the new UNITE_ITS2 classes:   1680
+
+
+###############
+5, Convert classification to funguild format
+
+../scripts/classification2funguildformat.py soil_ITS2.classification
+The output is saved in file: soil_ITS2.funguild.txt
+
+###############
+6, Search for funguids
+python /home/duong/Data/Metagenomics/funguild/FUNGuild-master/Guilds_v1.1.py -otu soil_ITS2.funguild.txt -db fungi -m -u
+
+The results is saved in soil_ITS2.funguild.guilds.txt
+###############
+7, Search for plant pathogenic fungi
+grep "Plant Pathogen" soil_ITS2.funguild.guilds.txt
+3560
+
+only 278 otus found?
+#######################
+8, Select only otus that have the sequences available and merge the classification with the guild files 
+
+ ../scripts/mergeClassificationAndGuild.py soil_ITS2.fasta ../soil.table soil_ITS2.classification  soil_ITS2.funguild.guilds.txt soil_ITS2.table soil_ITS2.guild 
+
+
+The new table file is saved in soil_ITS2.table and soil_ITS2.guild
+
+#####
+9,Start analysis following the analysis.R
+
+
+
