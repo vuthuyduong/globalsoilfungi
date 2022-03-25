@@ -22,9 +22,10 @@ font_import()
 allotu_table <-read.delim("soil_ITS2.table",row.names=1,check.names=FALSE)
 #meta_table <-read.delim("/home/duong/Data/Metagenomics/soil_samplesUNITE/sciencepaper_otus/soil.unite.metadata",row.names=1,check.names=FALSE)
 meta_table <-read.delim("soil_ITS2.metadata",row.names=1,check.names=FALSE)
-classification_table <-read.delim("dnabarcoder/soil_ITS2.moldITS2_BLAST.classification.better",row.names=1,check.names=FALSE)
+#classification_table <-read.delim("dnabarcoder/soil_ITS2.moldITS2_BLAST.classification.better",row.names=1,check.names=FALSE)
+classification_table <-read.delim("dnabarcoder/soil_ITS2.moldITS2_BLAST.classification.worseclassificationremoved",row.names=1,check.names=FALSE)
 otu_table <- allotu_table[rownames(classification_table), ]
-#guild_table <-read.delim("dnabarcoder/soil_ITS2.CBSITS_BLAST.classification.better.guilds.txt",row.names=1,check.names=FALSE)
+guild_table <-read.delim("dnabarcoder/soil_ITS2.CBSITS_BLAST.classification.worseclassificationremoved.guilds.txt",row.names=1,check.names=FALSE)
 #guild_table<-guild_table[rownames(classification_table), ]
   
 #save class_tables
@@ -1080,10 +1081,10 @@ gp_2 = ggplotGrob(p_o)
 gp_3 = ggplotGrob(p_c)
 
 #gp_f$widths <- gp_g$widths
-#figure <- grid.arrange(gp_1 , gp_2, gp_3)
+figure <- grid.arrange(gp_1 , gp_2, gp_3)
 
-figure <- ggarrange(gp_1,gp_2,gp_3,
-                    ncol = 1, nrow = 3)
+#figure <- ggarrange(gp_1,gp_2,gp_3,
+#                    ncol = 1, nrow = 3)
 pdf("results_moldITS2/family_order_class_diversity.pdf",height=12,width=21)
 print(figure)
 dev.off()
@@ -1382,7 +1383,7 @@ classification_table_onlybyCBS <-read.delim("dnabarcoder/soil_ITS2.moldITS2_BLAS
 otu_table_onlybyCBS <- allotu_table[rownames(classification_table_onlybyCBS), ]
 
 guild_table_onlybyCBS <-read.delim("dnabarcoder/soil_ITS2.moldITS2_BLAST.classification.only.guilds.txt",row.names=1,check.names=FALSE)
-guild_table_onlybyCBS<-guild_table[rownames(classification_table_onlybyCBS), ]
+#guild_table_onlybyCBS<-guild_table[rownames(classification_table_onlybyCBS), ]
 table <-data.frame(OTU_ID = row.names(guild_table_onlybyCBS), 
                    guild = as.character(guild_table_onlybyCBS$Guild),
                    otu_table_onlybyCBS,
